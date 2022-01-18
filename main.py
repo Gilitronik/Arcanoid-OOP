@@ -15,8 +15,7 @@ BLUE = (0, 0, 255)
 WHITE = (255, 255, 255)
 YELLOW = (255, 255, 0)
 PUMPKIN_COLOR = (255, 117, 24)
-
-
+PLATFORM_SIZE_XY = (100, 30)
 
 class Platform:
     def __init__(self, pos: tuple[2], size: tuple[2]) -> None:
@@ -54,6 +53,13 @@ class Platform:
                 self.dir += 1
             else:
                 raise Exception('ЧТО ЗА КЛАВИШУ ТЫ МНЕ ДАЛ!!!!?????')
+
+    def collision(self, obj):
+        if obj.pos[1] + obj.size >= self.pos[1] and obj.pos[0] + obj.size >= self.pos[0] and self.pos[0] + self.size[0] >= obj.pos[0]: 
+            obj.pos = (obj.pos[0], self.pos[1] - obj.size)
+            obj.speed = (obj.speed[0], -obj.speed[1])
+
+
             
 class Square:
     def __init__(self, pos: tuple[2], size, speed=(10, 3)) -> None:
@@ -65,11 +71,12 @@ class Square:
     def draw(self) -> None:
         pygame.draw.rect(screen, choice((RED, GREEN, BLUE, YELLOW, PUMPKIN_COLOR)), (*self.pos, self.size, self.size))
     
-    def move(self) -> None:
+    def move(self, objects) -> None:
         x, y = self.pos
         vx, vy = self.speed
         x += vx
         y += vy
+
         if x <= 0:
             x = 0
             vx = -vx
@@ -83,6 +90,8 @@ class Square:
         elif y + self.size > screen.get_height():
             y = screen.get_height() - self.size
             vy = -vy
+            objects.remove(obj)
+            return
 
         self.pos = (x, y)
         self.speed = (vx, vy)
@@ -92,11 +101,11 @@ class Square:
 def draw_background():
     pygame.draw.rect(screen, BLACK, (0, 0, screen.get_width(), screen.get_height()))
 
-objects = []
-for i in range(1000):
-    objects.append(Square((0, 0), 20, (random() * 10, random() * 10)))
+objects = set()
+for i in range(30):
+    objects.add(Square((0, 0), 20, (random() * 10, random() * 10)))
 
-platform = Platform((30, screen.get_height() - 50), (100, 30))
+platform = Platform((30, screen.get_height() - 50), PLATFORM_SIZE_XY)
 
 while True:
     clock.tick(FPS)
@@ -118,7 +127,10 @@ while True:
  
     
     draw_background()
-    for obj in objects:
-        obj.move()
+    for obj in set(objects):
+        obj.move(objects)
+        platform.collision(obj)
+
+        
     platform.move()
     pygame.display.update()
